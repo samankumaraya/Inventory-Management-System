@@ -6,6 +6,9 @@ const cors = require("cors");
 
 const app = express();
 
+//Routes
+app.get(())
+
 const PORT = process.env.PORT || 5000;
 
 // Connect to DB and start server
