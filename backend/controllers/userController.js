@@ -1,6 +1,7 @@
 const asyncHandler = require("express-async-handler")
 const User = require("../models/userModel");
-const jwt = require("jsonwebtoken")
+const jwt = require("jsonwebtoken");
+const bcrypt = require("bcrpptjs");
 
 
 // Generate Token
@@ -63,10 +64,10 @@ const registerUser = asyncHandler( async (req,res) => {
         token,
 
 
-    })
+    });
  } else {
     res.status(400)
-    throw new Error("Invalid user data")
+    throw new Error("Invalid user data");
  }
 
 });
@@ -77,9 +78,73 @@ const  loginUser= asyncHandler(async (req,res) =>
     const {email, password} = req.body
 
     
+    if(!email || !password) {
+      res.status(400)
+      throw new Error("Please add email and password");
+    }
+
+    const user = await User.findOne({email})
+
+     
+    if(!user) {
+      res.status(400)
+      throw new Error("Don't have account. Please sign up first");
+    }
+
+    const passwordIsCorrect = await bcrypt.compare(password, user.password);
+
+    
+ // Generate Token
+   const token = generateToken(user._id);
+
+   //send HTTP-only cookie
+   res.cookie("token", token,{
+    path: "/",
+    httpOnly: true,
+    expires: new Date(Date.now() + 1000 * 86400), // 1 day
+    sameSite: "none",
+    secure: true,
+   });
+  
+
+    if(user && passwordIsCorrect){
+      const {_id,name,email, photo,phone, bio} = user
+    res.status(200).json({
+        _id,
+        name,
+        email, 
+        photo,
+        phone,
+        bio,
+        token,
+    });
+    }else{
+      res.status(400)
+      throw new Error("Invalid email or password");
+    }
+    
+});
+
+//Logout User
+const logout = asyncHandler (async (req,res) => {
+   res.cookie("token", "",{
+      path: "/",
+      httpOnly: true,
+      expires: new Date(0), // 1 day
+      sameSite: "none",
+      secure: true,
+     });
+     return res.status(200).json({message: "Successfully Logged Out"})
+});
+
+// Get User Data
+const getUser = asyncHandler (async (req,res) => {
+   res.send("Get user Data");
 });
 
 module.exports = {
     registerUser,
     loginUser,
+    logout,
+    getUser,
 };
