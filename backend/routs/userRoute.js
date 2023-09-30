@@ -5,6 +5,6 @@ const registerUser = () => {
 
 };
 
-router.post("register", registerUser)
+router.post("register", registerUser);
 
 module.exports = router
