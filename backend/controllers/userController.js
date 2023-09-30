@@ -1,5 +1,11 @@
 const asyncHandler = require("express-async-handler")
 const User = require("../models/userModel");
+const jwt = require("jsonwebtoken")
+
+const generateToken = (id) => {
+    return jwt.sign({id},  process.env.JWT_SECRET, {
+        expiresIn: "1d"})
+};
 
 
 const registerUser = asyncHandler( async (req,res) => {
@@ -23,7 +29,17 @@ const registerUser = asyncHandler( async (req,res) => {
     throw new Error("Email has already been used")
  }
 
- // Encrypt password before saving to DB
+ // Generate Token
+   const token = generateToken(user._id);
+
+   //send HTTP-only cookie
+   res.cookie("token", token,{
+    path: "/",
+    httpOnly: true,
+    expires: new Date(Date.now() + 1000 * 86400), // 1 day
+    sameSite: "none",
+    secure: true,
+   })
   
 
  //Create new user
@@ -36,7 +52,14 @@ const registerUser = asyncHandler( async (req,res) => {
  if (user){
     const {_id,name,email, photo,phone, bio} = user
     res.status(201).json({
-        _id,name,email, photo,phone, bio
+        _id,
+        name,
+        email, 
+        photo,
+        phone,
+        bio,
+        token,
+
 
     })
  } else {
